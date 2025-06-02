@@ -502,30 +502,65 @@
       customers.push(new Customer(pos.x, pos.y));
     }
   }
+// Food selection popup functionality
+let foodSelectionPopup = null;
+
+function showFoodSelectionPopup(x, y, callback) {
+  // Remove existing popup if any
+  hideFoodSelectionPopup();
   
+  // Create popup container
+  foodSelectionPopup = document.createElement('div');
+  // ... (all the popup creation code)
+}
+
+function hideFoodSelectionPopup() {
+  if (foodSelectionPopup) {
+    foodSelectionPopup.remove();
+    foodSelectionPopup = null;
+  }
+}
   // Handle clicks
-  function handleClick(x, y) {
-    // Check station clicks
-    for (const station of stations) {
-      const dx = x - station.x;
-      const dy = y - station.y;
-      if (Math.sqrt(dx * dx + dy * dy) < 40) {
-        if (!station.busy && station.type === 'prep') {
-          // Start new order from waiting customer
-          const waitingCustomer = customers.find(c => !c.satisfied && !c.leaving && 
-            !orders.some(o => o.customer === c));
+ function handleClick(x, y) {
+  // Check station clicks
+  for (const station of stations) {
+    const dx = x - station.x;
+    const dy = y - station.y;
+    if (Math.sqrt(dx * dx + dy * dy) < 40) {
+      if (!station.busy && station.type === 'prep') {
+        // Check if there are waiting customers
+        const waitingCustomers = customers.filter(c => !c.satisfied && !c.leaving && 
+          !orders.some(o => o.customer === c));
+        
+        if (waitingCustomers.length > 0) {
+          // Show food selection popup
+          const rect = canvas.getBoundingClientRect();
+          const popupX = rect.left + station.x + 40;
+          const popupY = rect.top + station.y - 20;
           
-          if (waitingCustomer) {
-            const order = createOrder(waitingCustomer.order, waitingCustomer);
+          showFoodSelectionPopup(popupX, popupY, (selectedDish) => {
+            // Find a customer who wants this dish or assign to any waiting customer
+            let targetCustomer = waitingCustomers.find(c => c.order.name === selectedDish.name);
+            if (!targetCustomer) {
+              targetCustomer = waitingCustomers[0]; // Just pick the first waiting customer
+            }
+            
+            // Create order with selected dish
+            const order = createOrder(selectedDish, targetCustomer);
             orders.push(order);
             processOrder(order);
-          }
+          });
+        } else {
+          showNotification('No customers waiting!', '#f39c12');
         }
-        return;
       }
+      return;
     }
   }
   
+  // Hide popup if clicking elsewhere
+  hideFoodSelectionPopup();
+}
   // Show notification
   function showNotification(text, color = '#27ae60') {
     notification.textContent = text;
