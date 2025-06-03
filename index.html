@@ -123,7 +123,7 @@
   
   #chef-snail {
     position: absolute;
-    bottom: 130px;
+    bottom: 125px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 48px;
@@ -138,7 +138,7 @@
   
   #kitchen-counter {
     position: absolute;
-    bottom: 20px;
+    bottom: 150px;
     left: 50%;
     transform: translateX(-50%);
     width: 90%;
@@ -365,7 +365,7 @@
       <div id="cooking-queue"></div>
     </div>
     
-    <div id="chef-snail">🐌👨‍🍳</div>
+    <div id="chef-snail">🐌</div>
     
     <div id="kitchen-counter">
       <div class="ingredient" data-ingredient="lettuce">🥬<br>Lettuce<br>2s</div>
@@ -415,9 +415,9 @@
     cookingItems: [],
     nextCustomerId: 0,
     nextCookingId: 0,
-    cookingSpeedMultiplier: 1,
+    cookingSpeedMultiplier: 2,
     patienceMultiplier: 1.5,
-    rewardMultiplier: 1,
+    rewardMultiplier: 1.8,
     gameOver: false,
     lastCustomerSpawn: 0,
     customerSpawnRate: 5600, // ms between customers (slower pace)
@@ -501,7 +501,7 @@
       color: snailColors[Math.floor(Math.random() * snailColors.length)],
       order: getRandomRecipe(),
       patience: 150,
-      maxPatience: 100 * gameState.patienceMultiplier,
+      maxPatience: 150 * gameState.patienceMultiplier,
       element: null,
       served: false,
       hasFood: false
@@ -634,7 +634,7 @@
       customer.patience -= 0.15;
       
       const patiencePercent = customer.patience / customer.maxPatience;
-      customer.patienceFill.style.width = (patiencePercent * 100) + '%';
+      customer.patienceFill.style.width = (patiencePercent * 150) + '%';
       
       if (customer.patience <= 0) {
         // Customer leaves disappointed
@@ -739,7 +739,7 @@
     
     // Advance days and difficulty
     if (gameState.served > 0 && gameState.served % 15 === 0) {
-      gameState.customerSpawnRate = Math.max(2000, gameState.customerSpawnRate - 150);
+      gameState.customerSpawnRate = Math.max(3000, gameState.customerSpawnRate - 150);
       gameState.day = Math.floor(gameState.served / 15) + 1;
     }
     
