@@ -407,7 +407,7 @@
   const rewardUpgradeBtn = document.getElementById('rewardUpgrade');
   
   let gameState = {
-    money: 20,
+    money: 0,
     happiness: 50,
     served: 0,
     day: 1,
@@ -415,9 +415,9 @@
     cookingItems: [],
     nextCustomerId: 0,
     nextCookingId: 0,
-    cookingSpeedMultiplier: 2,
+    cookingSpeedMultiplier: 1,
     patienceMultiplier: 1.5,
-    rewardMultiplier: 1.8,
+    rewardMultiplier: 1,
     gameOver: false,
     lastCustomerSpawn: 0,
     customerSpawnRate: 5600, // ms between customers (slower pace)
