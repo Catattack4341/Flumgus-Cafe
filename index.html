@@ -385,9 +385,9 @@
     Day: <span id="day">1</span>
   </div>
   <div id="upgrades">
-    <button class="upgrade-btn" id="speedUpgrade">Faster Cooking (50🥬)</button>
-    <button class="upgrade-btn" id="patienceUpgrade">Snail Patience (75🥬)</button>
-    <button class="upgrade-btn" id="rewardUpgrade">Better Tips (100🥬)</button>
+    <button class="upgrade-btn" id="speedUpgrade">Faster Cooking (25🥬)</button>
+    <button class="upgrade-btn" id="patienceUpgrade">Snail Patience (50🥬)</button>
+    <button class="upgrade-btn" id="rewardUpgrade">Better Tips (75🥬)</button>
   </div>
 </div>
 
@@ -420,7 +420,7 @@
     rewardMultiplier: 1,
     gameOver: false,
     lastCustomerSpawn: 0,
-    customerSpawnRate: 4000, // ms between customers (slower pace)
+    customerSpawnRate: 5600, // ms between customers (slower pace)
     speedUpgradeCost: 50,
     patienceUpgradeCost: 75,
     rewardUpgradeCost: 100
@@ -429,35 +429,35 @@
   const recipes = {
     lettuce: { 
       cookTime: 2000, 
-      price: 3, 
+      price: 5, 
       emoji: '🥬', 
       name: 'Fresh Lettuce',
       ingredients: ['lettuce']
     },
     tomato: { 
       cookTime: 3000, 
-      price: 4, 
+      price: 6, 
       emoji: '🍅', 
       name: 'Juicy Tomato',
       ingredients: ['tomato']
     },
     bread: { 
       cookTime: 4000, 
-      price: 5, 
+      price: 8, 
       emoji: '🍞', 
       name: 'Fresh Bread',
       ingredients: ['bread']
     },
     coffee: { 
       cookTime: 5000, 
-      price: 6, 
+      price: 9, 
       emoji: '☕', 
       name: 'Snail Coffee',
       ingredients: ['coffee']
     },
     cake: { 
       cookTime: 6000, 
-      price: 10, 
+      price: 17, 
       emoji: '🧁', 
       name: 'Snail Cake',
       ingredients: ['cake']
