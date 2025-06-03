@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flumgus Cafe</title>
+<title>Snail Cafe - Flumgus Edition</title>
 <style>
   body, html {
     margin: 0; padding: 0; overflow: hidden;
@@ -237,64 +237,6 @@
     transition: width 0.1s linear;
     border-radius: 0 0 6px 6px;
   }
-
-    #combo-station {
-  position: absolute;
-  top: 20px;
-  left: 240px;
-  width: 180px;
-  min-height: 140px;
-  background: rgba(75, 0, 130, 0.8);
-  border: 3px solid #4B0082;
-  border-radius: 10px;
-  padding: 10px;
-  backdrop-filter: blur(5px);
-}
-
-.combo-recipes {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  max-height: 90px;
-  overflow-y: auto;
-}
-
-.combo-btn {
-  background: #DDA0DD;
-  padding: 6px;
-  border-radius: 6px;
-  border: 2px solid #9370DB;
-  font-size: 11px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.combo-btn:hover {
-  background: #E6E6FA;
-  transform: scale(1.05);
-}
-
-.combo-btn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: #999;
-}
-
-.combo-btn.available {
-  background: #98FB98;
-  border-color: #32CD32;
-  animation: combo-ready 1s ease-in-out infinite alternate;
-}
-
-@keyframes combo-ready {
-  from { box-shadow: 0 0 5px rgba(50,205,50,0.5); }
-  to { box-shadow: 0 0 15px rgba(50,205,50,0.8); }
-}
   
   #ui {
     background: linear-gradient(to right, #2F4F2F, #556B2F);
@@ -423,7 +365,7 @@
       <div id="cooking-queue"></div>
     </div>
     
-    <div id="chef-snail">🐌</div>
+    <div id="chef-snail">🐌👨‍🍳</div>
     
     <div id="kitchen-counter">
       <div class="ingredient" data-ingredient="lettuce">🥬<br>Lettuce<br>2s</div>
@@ -434,18 +376,7 @@
     </div>
   </div>
 </div>
-  
-<div id="combo-station">
-  <h3 style="margin: 0 0 10px 0; color: white; text-align: center; font-size: 12px;">🥪 Combos</h3>
-  <div class="combo-recipes">
-    <div class="combo-btn" data-combo="sandwich">🥪 Sandwich<br>(🥬+🍞)</div>
-    <div class="combo-btn" data-combo="salad">🥗 Salad<br>(🥬+🍅)</div>
-    <div class="combo-btn" data-combo="toast">🍞🍅 Toast<br>(🍞+🍅)</div>
-    <div class="combo-btn" data-combo="dessert">🧁☕ Dessert<br>(🧁+☕)</div>
-    <div class="combo-btn" data-combo="deluxe">🥙 Deluxe<br>(🍞+🥬+🍅)</div>
-  </div>
-</div>
-  
+
 <div id="ui">
   <div id="stats">
     🥬 Lettuce Coins: <span id="money">0</span> | 
@@ -462,7 +393,20 @@
 
 <script>
 (() => {
-  const g = {
+  const cafe = document.getElementById('cafe');
+  const cookingQueue = document.getElementById('cooking-queue');
+  const moneySpan = document.getElementById('money');
+  const happinessSpan = document.getElementById('happiness');
+  const servedSpan = document.getElementById('served');
+  const daySpan = document.getElementById('day');
+  const happinessBar = document.getElementById('happinessBar');
+  const happinessText = document.getElementById('happinessText');
+  
+  const speedUpgradeBtn = document.getElementById('speedUpgrade');
+  const patienceUpgradeBtn = document.getElementById('patienceUpgrade');
+  const rewardUpgradeBtn = document.getElementById('rewardUpgrade');
+  
+  let gameState = {
     money: 20,
     happiness: 50,
     served: 0,
@@ -471,151 +415,168 @@
     cookingItems: [],
     nextCustomerId: 0,
     nextCookingId: 0,
-    cookingSpeedMult: 1,
-    patienceMult: 1.5,
-    rewardMult: 1,
+    cookingSpeedMultiplier: 1,
+    patienceMultiplier: 1.5,
+    rewardMultiplier: 1,
     gameOver: false,
     lastCustomerSpawn: 0,
-    customerSpawnRate: 4000,
+    customerSpawnRate: 4000, // ms between customers (slower pace)
     speedUpgradeCost: 50,
     patienceUpgradeCost: 75,
     rewardUpgradeCost: 100
   };
   
-  const MAX_COOKING_ITEMS = 3;
-  
-  const cafe = document.getElementById('cafe');
-  const cookingQueue = document.getElementById('cooking-queue');
-  const els = {
-    money: document.getElementById('money'),
-    happiness: document.getElementById('happiness'),
-    served: document.getElementById('served'),
-    day: document.getElementById('day'),
-    happinessBar: document.getElementById('happinessBar'),
-    happinessText: document.getElementById('happinessText'),
-    speedUpgrade: document.getElementById('speedUpgrade'),
-    patienceUpgrade: document.getElementById('patienceUpgrade'),
-    rewardUpgrade: document.getElementById('rewardUpgrade')
-  };
-  
   const recipes = {
-    lettuce: { t: 2000, p: 3, e: '🥬', n: 'Fresh Lettuce' },
-    tomato: { t: 3000, p: 4, e: '🍅', n: 'Juicy Tomato' },
-    bread: { t: 4000, p: 5, e: '🍞', n: 'Fresh Bread' },
-    coffee: { t: 5000, p: 6, e: '☕', n: 'Snail Coffee' },
-    cake: { t: 6000, p: 10, e: '🧁', n: 'Snail Cake' }
+    lettuce: { 
+      cookTime: 2000, 
+      price: 3, 
+      emoji: '🥬', 
+      name: 'Fresh Lettuce',
+      ingredients: ['lettuce']
+    },
+    tomato: { 
+      cookTime: 3000, 
+      price: 4, 
+      emoji: '🍅', 
+      name: 'Juicy Tomato',
+      ingredients: ['tomato']
+    },
+    bread: { 
+      cookTime: 4000, 
+      price: 5, 
+      emoji: '🍞', 
+      name: 'Fresh Bread',
+      ingredients: ['bread']
+    },
+    coffee: { 
+      cookTime: 5000, 
+      price: 6, 
+      emoji: '☕', 
+      name: 'Snail Coffee',
+      ingredients: ['coffee']
+    },
+    cake: { 
+      cookTime: 6000, 
+      price: 10, 
+      emoji: '🧁', 
+      name: 'Snail Cake',
+      ingredients: ['cake']
+    }
   };
   
-  const combos = {
-  sandwich: { ingredients: ['lettuce', 'bread'], reward: 12, emoji: '🥪', name: 'Snail Sandwich' },
-  salad: { ingredients: ['lettuce', 'tomato'], reward: 10, emoji: '🥗', name: 'Garden Salad' },
-  toast: { ingredients: ['bread', 'tomato'], reward: 11, emoji: '🍞🍅', name: 'Tomato Toast' },
-  dessert: { ingredients: ['cake', 'coffee'], reward: 18, emoji: '🧁☕', name: 'Cake & Coffee' },
-  deluxe: { ingredients: ['bread', 'lettuce', 'tomato'], reward: 20, emoji: '🥙', name: 'Deluxe Wrap' }
-};
+  const snailEmojis = ['🐌', '🐌', '🐌', '🐌'];
+  const snailColors = [
+    'hue-rotate(0deg)',
+    'hue-rotate(60deg)', 
+    'hue-rotate(120deg)', 
+    'hue-rotate(180deg)',
+    'hue-rotate(240deg)',
+    'hue-rotate(300deg)'
+  ];
   
-  const snailEmojis = ['🐌'];
-  const snailColors = ['hue-rotate(0deg)', 'hue-rotate(60deg)', 'hue-rotate(120deg)', 'hue-rotate(180deg)', 'hue-rotate(240deg)', 'hue-rotate(300deg)'];
-  
-function getRandomRecipe() {
-  const basicKeys = Object.keys(recipes);
-  const comboKeys = Object.keys(combos);
-  const allKeys = [...basicKeys, ...comboKeys];
-  
-  const weights = g.day === 1 ? 
-    [3, 3, 2, 1, 1, 1, 1, 1, 1, 1] : 
-    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
-  
-  const totalWeight = weights.reduce((a, b) => a + b, 0);
-  let r = Math.random() * totalWeight;
-  
-  for (let i = 0; i < allKeys.length; i++) {
-    r -= weights[i];
-    if (r <= 0) return allKeys[i];
+  function getRandomRecipe() {
+    const recipeKeys = Object.keys(recipes);
+    // Weight towards simpler recipes early on
+    const weights = gameState.day === 1 ? [3, 3, 2, 1, 1] : [2, 2, 2, 2, 2];
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    let random = Math.random() * totalWeight;
+    
+    for (let i = 0; i < recipeKeys.length; i++) {
+      random -= weights[i];
+      if (random <= 0) {
+        return recipeKeys[i];
+      }
+    }
+    return recipeKeys[0];
   }
-  return allKeys[0];
-}
   
   function spawnCustomer() {
-    if (g.gameOver) return;
+    if (gameState.gameOver) return;
     
-    const c = {
-      id: g.nextCustomerId++,
+    const customer = {
+      id: gameState.nextCustomerId++,
       x: Math.random() * (cafe.offsetWidth - 100) + 20,
       y: Math.random() * (cafe.offsetHeight - 250) + 60,
-      emoji: snailEmojis[0],
+      emoji: snailEmojis[Math.floor(Math.random() * snailEmojis.length)],
       color: snailColors[Math.floor(Math.random() * snailColors.length)],
       order: getRandomRecipe(),
-      patience: 0,
-      maxPatience: 100 * g.patienceMult,
+      patience: 100,
+      maxPatience: 100 * gameState.patienceMultiplier,
       element: null,
       served: false,
       hasFood: false
     };
     
-    c.patience = c.maxPatience;
+    customer.patience = customer.maxPatience;
     
-    const el = document.createElement('div');
-    el.className = 'customer-snail waiting';
-    el.style.left = c.x + 'px';
-    el.style.top = c.y + 'px';
-    el.style.filter = c.color;
-    el.innerHTML = c.emoji;
-    el.onclick = () => serveCustomer(c.id);
+    const customerEl = document.createElement('div');
+    customerEl.className = 'customer-snail waiting';
+    customerEl.style.left = customer.x + 'px';
+    customerEl.style.top = customer.y + 'px';
+    customerEl.style.filter = customer.color;
+    customerEl.innerHTML = customer.emoji;
+    customerEl.onclick = () => serveCustomer(customer.id);
     
     const bubble = document.createElement('div');
     bubble.className = 'speech-bubble';
-   const orderInfo = recipes[c.order] || combos[c.order];
-bubble.innerHTML = orderInfo.e + ' ' + orderInfo.n;
-    el.appendChild(bubble);
+    bubble.innerHTML = recipes[customer.order].emoji + ' ' + recipes[customer.order].name;
+    customerEl.appendChild(bubble);
     
-    const pBar = document.createElement('div');
-    pBar.className = 'patience-bar';
-    const pFill = document.createElement('div');
-    pFill.className = 'patience-fill';
-    pFill.style.width = '100%';
-    pBar.appendChild(pFill);
-    el.appendChild(pBar);
+    const patienceBar = document.createElement('div');
+    patienceBar.className = 'patience-bar';
+    const patienceFill = document.createElement('div');
+    patienceFill.className = 'patience-fill';
+    patienceFill.style.width = '100%';
+    patienceBar.appendChild(patienceFill);
+    customerEl.appendChild(patienceBar);
     
-    c.element = el;
-    c.patienceFill = pFill;
-    cafe.appendChild(el);
-    g.customers.push(c);
+    customer.element = customerEl;
+    customer.patienceFill = patienceFill;
+    cafe.appendChild(customerEl);
+    gameState.customers.push(customer);
   }
   
   function startCooking(ingredient) {
-    if (g.cookingItems.length >= MAX_COOKING_ITEMS) return;
-    
-    const item = {
-      id: g.nextCookingId++,
+    const cookingItem = {
+      id: gameState.nextCookingId++,
       ingredient: ingredient,
       startTime: Date.now(),
-      cookTime: 2000 / g.cookingSpeedMult,
+      cookTime: 2000 / gameState.cookingSpeedMultiplier, // Base cook time
       ready: false,
       element: null
     };
     
-    const el = document.createElement('div');
-    el.className = 'cooking-item';
-    el.innerHTML = `<div>${recipes[ingredient].e} ${ingredient}</div><div class="cook-timer"></div>`;
-    el.onclick = () => {
-      if (item.ready) completeCooking(item.id);
+    const cookingEl = document.createElement('div');
+    cookingEl.className = 'cooking-item';
+    cookingEl.innerHTML = `
+      <div>${recipes[ingredient] ? recipes[ingredient].emoji : '🥬'} ${ingredient}</div>
+      <div class="cook-timer"></div>
+    `;
+    cookingEl.onclick = () => {
+      if (cookingItem.ready) {
+        completeCooking(cookingItem.id);
+      }
     };
     
-    item.element = el;
-    cookingQueue.appendChild(el);
-    g.cookingItems.push(item);
-    el.classList.add('cooking');
+    cookingItem.element = cookingEl;
+    cookingQueue.appendChild(cookingEl);
+    gameState.cookingItems.push(cookingItem);
+    
+    // Start cooking animation
+    cookingEl.classList.add('cooking');
   }
   
   function completeCooking(cookingId) {
-    const idx = g.cookingItems.findIndex(c => c.id === cookingId);
-    if (idx === -1) return;
+    const itemIndex = gameState.cookingItems.findIndex(c => c.id === cookingId);
+    if (itemIndex === -1) return;
     
-    const item = g.cookingItems[idx];
-    if (!item.ready) return;
+    const cookingItem = gameState.cookingItems[itemIndex];
+    if (!cookingItem.ready) return;
     
-    const customer = g.customers.find(c => !c.served && !c.hasFood && c.order === item.ingredient);
+    // Look for customer who wants this item
+    const customer = gameState.customers.find(c => 
+      !c.served && !c.hasFood && c.order === cookingItem.ingredient
+    );
     
     if (customer) {
       customer.hasFood = true;
@@ -623,110 +584,82 @@ bubble.innerHTML = orderInfo.e + ' ' + orderInfo.n;
       customer.element.style.background = 'rgba(144, 238, 144, 0.3)';
       customer.element.style.borderRadius = '50%';
       
+      // Update speech bubble to show ready to serve
       const bubble = customer.element.querySelector('.speech-bubble');
       bubble.innerHTML = '✅ Ready to serve!';
       bubble.style.background = 'rgba(144, 238, 144, 0.95)';
     }
     
-    item.element.remove();
-    g.cookingItems.splice(idx, 1);
+    // Remove from cooking queue
+    cookingItem.element.remove();
+    gameState.cookingItems.splice(itemIndex, 1);
   }
-function makeCombo(comboType) {
-  const combo = combos[comboType];
-  const availableItems = [];
-  
-  // Check if we have the required ingredients ready
-  combo.ingredients.forEach(ingredient => {
-    const readyItem = g.cookingItems.find(item => 
-      item.ingredient === ingredient && item.ready
-    );
-    if (readyItem) availableItems.push(readyItem);
-  });
-  
-  if (availableItems.length === combo.ingredients.length) {
-    // Remove used ingredients
-    availableItems.forEach(item => {
-      item.element.remove();
-      const idx = g.cookingItems.findIndex(c => c.id === item.id);
-      if (idx !== -1) g.cookingItems.splice(idx, 1);
-    });
-    
-    // Find customer who wants this combo
-    const customer = g.customers.find(c => 
-      !c.served && !c.hasFood && c.order === comboType
-    );
-    
-    if (customer) {
-      customer.hasFood = true;
-      customer.element.classList.remove('waiting');
-      customer.element.style.background = 'rgba(144, 238, 144, 0.3)';
-      customer.element.style.borderRadius = '50%';
-      
-      const bubble = customer.element.querySelector('.speech-bubble');
-      bubble.innerHTML = '✅ Combo ready!';
-      bubble.style.background = 'rgba(144, 238, 144, 0.95)';
-    }
-  }
-}
   
   function serveCustomer(customerId) {
-    const idx = g.customers.findIndex(c => c.id === customerId);
-    if (idx === -1) return;
+    const customerIndex = gameState.customers.findIndex(c => c.id === customerId);
+    if (customerIndex === -1) return;
     
-    const c = g.customers[idx];
-    if (c.served || !c.hasFood) return;
+    const customer = gameState.customers[customerIndex];
+    if (customer.served || !customer.hasFood) return;
     
-    c.served = true;
+    customer.served = true;
     
-    const earnings = Math.floor((recipes[c.order]?.p || combos[c.order]?.reward || 5) * g.rewardMult);
-    g.money += earnings;
-    g.served++;
-    g.happiness = Math.min(100, g.happiness + 3);
+    const earnings = Math.floor(recipes[customer.order].price * gameState.rewardMultiplier);
+    gameState.money += earnings;
+    gameState.served++;
     
-    c.element.style.background = 'rgba(144, 238, 144, 0.6)';
-    c.element.style.transform = 'scale(1.3)';
-    c.element.innerHTML = '🐌💚';
+    // Increase happiness for successful serve
+    gameState.happiness = Math.min(100, gameState.happiness + 3);
+    
+    // Happy serving animation
+    customer.element.style.background = 'rgba(144, 238, 144, 0.6)';
+    customer.element.style.transform = 'scale(1.3)';
+    customer.element.innerHTML = '🐌💚';
     
     setTimeout(() => {
-      if (c.element && c.element.parentNode) {
-        c.element.parentNode.removeChild(c.element);
+      if (customer.element && customer.element.parentNode) {
+        customer.element.parentNode.removeChild(customer.element);
       }
-      g.customers.splice(idx, 1);
+      gameState.customers.splice(customerIndex, 1);
     }, 800);
     
     updateUI();
   }
   
   function updateCustomers() {
-    g.customers.forEach(c => {
-      if (c.served) return;
+    gameState.customers.forEach(customer => {
+      if (customer.served) return;
       
-      c.patience -= 0.15;
+      // Slower patience drain for more relaxed gameplay
+      customer.patience -= 0.15;
       
-      const pp = c.patience / c.maxPatience;
-      c.patienceFill.style.width = (pp * 100) + '%';
+      const patiencePercent = customer.patience / customer.maxPatience;
+      customer.patienceFill.style.width = (patiencePercent * 100) + '%';
       
-      if (c.patience <= 0) {
-        g.happiness = Math.max(0, g.happiness - 8);
-        c.element.classList.add('angry');
-        c.element.innerHTML = '🐌💔';
+      if (customer.patience <= 0) {
+        // Customer leaves disappointed
+        gameState.happiness = Math.max(0, gameState.happiness - 8);
+        customer.element.classList.add('angry');
+        customer.element.innerHTML = '🐌💔';
         
         setTimeout(() => {
-          if (c.element && c.element.parentNode) {
-            c.element.parentNode.removeChild(c.element);
+          if (customer.element && customer.element.parentNode) {
+            customer.element.parentNode.removeChild(customer.element);
           }
-          const idx = g.customers.findIndex(cu => cu.id === c.id);
-          if (idx !== -1) g.customers.splice(idx, 1);
+          const index = gameState.customers.findIndex(c => c.id === customer.id);
+          if (index !== -1) {
+            gameState.customers.splice(index, 1);
+          }
         }, 1200);
-      } else if (pp < 0.3) {
-        c.element.classList.add('angry');
+      } else if (patiencePercent < 0.3) {
+        customer.element.classList.add('angry');
       }
     });
   }
   
   function updateCooking() {
     const now = Date.now();
-    g.cookingItems.forEach(item => {
+    gameState.cookingItems.forEach(item => {
       if (item.ready) return;
       
       const elapsed = now - item.startTime;
@@ -744,141 +677,127 @@ function makeCombo(comboType) {
       }
     });
   }
-
-  function updateComboButtons() {
-  document.querySelectorAll('.combo-btn').forEach(btn => {
-    const comboType = btn.dataset.combo;
-    const combo = combos[comboType];
-    const availableCount = combo.ingredients.filter(ingredient => 
-      g.cookingItems.some(item => item.ingredient === ingredient && item.ready)
-    ).length;
-    
-    btn.classList.remove('available', 'disabled');
-    
-    if (availableCount === combo.ingredients.length) {
-      btn.classList.add('available');
-    } else {
-      btn.classList.add('disabled');
-    }
-  });
-}
   
   function updateUI() {
-    els.money.textContent = g.money;
-    els.happiness.textContent = Math.floor(g.happiness);
-    els.served.textContent = g.served;
-    els.day.textContent = g.day;
+    moneySpan.textContent = gameState.money;
+    happinessSpan.textContent = Math.floor(gameState.happiness);
+    servedSpan.textContent = gameState.served;
+    daySpan.textContent = gameState.day;
     
-    els.happinessBar.style.width = g.happiness + '%';
-    els.happinessText.textContent = `🐌 HAPPINESS: ${Math.floor(g.happiness)}%`;
+    happinessBar.style.width = gameState.happiness + '%';
+    happinessText.textContent = `🐌 HAPPINESS: ${Math.floor(gameState.happiness)}%`;
     
-    els.speedUpgrade.disabled = g.money < g.speedUpgradeCost;
-    els.patienceUpgrade.disabled = g.money < g.patienceUpgradeCost;
-    els.rewardUpgrade.disabled = g.money < g.rewardUpgradeCost;
+    // Update upgrade buttons
+    speedUpgradeBtn.disabled = gameState.money < gameState.speedUpgradeCost;
+    patienceUpgradeBtn.disabled = gameState.money < gameState.patienceUpgradeCost;
+    rewardUpgradeBtn.disabled = gameState.money < gameState.rewardUpgradeCost;
     
-    els.speedUpgrade.textContent = `Faster Cooking (${g.speedUpgradeCost}🥬)`;
-    els.patienceUpgrade.textContent = `Snail Patience (${g.patienceUpgradeCost}🥬)`;
-    els.rewardUpgrade.textContent = `Better Tips (${g.rewardUpgradeCost}🥬)`;
+    speedUpgradeBtn.textContent = `Faster Cooking (${gameState.speedUpgradeCost}🥬)`;
+    patienceUpgradeBtn.textContent = `Snail Patience (${gameState.patienceUpgradeCost}🥬)`;
+    rewardUpgradeBtn.textContent = `Better Tips (${gameState.rewardUpgradeCost}🥬)`;
+  }
+  
+  function checkGameOver() {
+    if (gameState.happiness <= 0) {
+      gameState.gameOver = true;
+      showGameOver();
+    }
   }
   
   function showGameOver() {
-    const div = document.createElement('div');
-    div.className = 'game-over';
-    div.innerHTML = `
+    const gameOverDiv = document.createElement('div');
+    gameOverDiv.className = 'game-over';
+    gameOverDiv.innerHTML = `
       <h2>🐌 The Snail Cafe Closed! 🐌</h2>
-      <p>You served ${g.served} happy snails</p>
-      <p>Earned ${g.money} Lettuce Coins in ${g.day} days</p>
-      <p>Final Happiness: ${Math.floor(g.happiness)}%</p>
+      <p>You served ${gameState.served} happy snails</p>
+      <p>Earned ${gameState.money} Lettuce Coins in ${gameState.day} days</p>
+      <p>Final Happiness: ${Math.floor(gameState.happiness)}%</p>
       <button class="restart-btn" onclick="location.reload()">Open New Cafe</button>
     `;
-    document.body.appendChild(div);
+    document.body.appendChild(gameOverDiv);
   }
   
   function gameLoop() {
-    if (g.gameOver) return;
+    if (gameState.gameOver) return;
     
     const now = Date.now();
     
-    if (now - g.lastCustomerSpawn > g.customerSpawnRate) {
+    // Spawn customers at a more relaxed pace
+    if (now - gameState.lastCustomerSpawn > gameState.customerSpawnRate) {
       spawnCustomer();
-      g.lastCustomerSpawn = now;
+      gameState.lastCustomerSpawn = now;
     }
     
+    // Update customers and cooking
     updateCustomers();
-    updateCooking
-    updateComboButtons();
+    updateCooking();
     
+    // Very gradual happiness decrease for challenge
     if (Math.random() < 0.002) {
-      g.happiness = Math.max(0, g.happiness - 0.5);
+      gameState.happiness = Math.max(0, gameState.happiness - 0.5);
     }
     
-    if (g.served > 0 && g.served % 15 === 0) {
-      g.customerSpawnRate = Math.max(2000, g.customerSpawnRate - 150);
-      g.day = Math.floor(g.served / 15) + 1;
+    // Advance days and difficulty
+    if (gameState.served > 0 && gameState.served % 15 === 0) {
+      gameState.customerSpawnRate = Math.max(2000, gameState.customerSpawnRate - 150);
+      gameState.day = Math.floor(gameState.served / 15) + 1;
     }
     
     updateUI();
-    
-    if (g.happiness <= 0) {
-      g.gameOver = true;
-      showGameOver();
-      return;
-    }
+    checkGameOver();
     
     requestAnimationFrame(gameLoop);
   }
   
+  // Ingredient clicks to start cooking
   document.querySelectorAll('.ingredient').forEach(ingredient => {
     ingredient.onclick = () => {
-      const type = ingredient.dataset.ingredient;
-      if (g.cookingItems.length < MAX_COOKING_ITEMS) {
-        startCooking(type);
-        ingredient.classList.add('cooking');
-        setTimeout(() => ingredient.classList.remove('cooking'), 300);
-      }
+      const ingredientType = ingredient.dataset.ingredient;
+      startCooking(ingredientType);
+      ingredient.classList.add('cooking');
+      setTimeout(() => {
+        ingredient.classList.remove('cooking');
+      }, 300);
     };
   });
   
-  els.speedUpgrade.onclick = () => {
-    if (g.money >= g.speedUpgradeCost) {
-      g.money -= g.speedUpgradeCost;
-      g.cookingSpeedMult += 0.3;
-      g.speedUpgradeCost = Math.floor(g.speedUpgradeCost * 1.4);
+  // Upgrades
+  speedUpgradeBtn.onclick = () => {
+    if (gameState.money >= gameState.speedUpgradeCost) {
+      gameState.money -= gameState.speedUpgradeCost;
+      gameState.cookingSpeedMultiplier += 0.3;
+      gameState.speedUpgradeCost = Math.floor(gameState.speedUpgradeCost * 1.4);
       updateUI();
     }
   };
   
-  els.patienceUpgrade.onclick = () => {
-    if (g.money >= g.patienceUpgradeCost) {
-      g.money -= g.patienceUpgradeCost;
-      g.patienceMult += 0.4;
-      g.patienceUpgradeCost = Math.floor(g.patienceUpgradeCost * 1.4);
+  patienceUpgradeBtn.onclick = () => {
+    if (gameState.money >= gameState.patienceUpgradeCost) {
+      gameState.money -= gameState.patienceUpgradeCost;
+      gameState.patienceMultiplier += 0.4;
+      gameState.patienceUpgradeCost = Math.floor(gameState.patienceUpgradeCost * 1.4);
       updateUI();
     }
   };
   
-  els.rewardUpgrade.onclick = () => {
-    if (g.money >= g.rewardUpgradeCost) {
-      g.money -= g.rewardUpgradeCost;
-      g.rewardMult += 0.25;
-      g.rewardUpgradeCost = Math.floor(g.rewardUpgradeCost * 1.4);
+  rewardUpgradeBtn.onclick = () => {
+    if (gameState.money >= gameState.rewardUpgradeCost) {
+      gameState.money -= gameState.rewardUpgradeCost;
+      gameState.rewardMultiplier += 0.25;
+      gameState.rewardUpgradeCost = Math.floor(gameState.rewardUpgradeCost * 1.4);
       updateUI();
     }
   };
   
+  // Start the game
   updateUI();
   gameLoop();
   
+  // Spawn first customer after a delay
   setTimeout(() => {
     spawnCustomer();
-    g.lastCustomerSpawn = Date.now();
+    gameState.lastCustomerSpawn = Date.now();
   }, 3000);
-  document.querySelectorAll('.combo-btn').forEach(btn => {
-  btn.onclick = () => {
-    const comboType = btn.dataset.combo;
-    makeCombo(comboType);
-  };
-});
   
 })();
 </script>
