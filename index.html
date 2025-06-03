@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Snail Cafe - Flumgus Edition</title>
+<title>Flumgus Cafe</title>
 <style>
   body, html {
     margin: 0; padding: 0; overflow: hidden;
@@ -731,3 +731,76 @@
     // Update customers and cooking
     updateCustomers();
     updateCooking();
+    
+    // Very gradual happiness decrease for challenge
+    if (Math.random() < 0.002) {
+      gameState.happiness = Math.max(0, gameState.happiness - 0.5);
+    }
+    
+    // Advance days and difficulty
+    if (gameState.served > 0 && gameState.served % 15 === 0) {
+      gameState.customerSpawnRate = Math.max(2000, gameState.customerSpawnRate - 150);
+      gameState.day = Math.floor(gameState.served / 15) + 1;
+    }
+    
+    updateUI();
+    checkGameOver();
+    
+    requestAnimationFrame(gameLoop);
+  }
+  
+  // Ingredient clicks to start cooking
+  document.querySelectorAll('.ingredient').forEach(ingredient => {
+    ingredient.onclick = () => {
+      const ingredientType = ingredient.dataset.ingredient;
+      startCooking(ingredientType);
+      ingredient.classList.add('cooking');
+      setTimeout(() => {
+        ingredient.classList.remove('cooking');
+      }, 300);
+    };
+  });
+  
+  // Upgrades
+  speedUpgradeBtn.onclick = () => {
+    if (gameState.money >= gameState.speedUpgradeCost) {
+      gameState.money -= gameState.speedUpgradeCost;
+      gameState.cookingSpeedMultiplier += 0.3;
+      gameState.speedUpgradeCost = Math.floor(gameState.speedUpgradeCost * 1.4);
+      updateUI();
+    }
+  };
+  
+  patienceUpgradeBtn.onclick = () => {
+    if (gameState.money >= gameState.patienceUpgradeCost) {
+      gameState.money -= gameState.patienceUpgradeCost;
+      gameState.patienceMultiplier += 0.4;
+      gameState.patienceUpgradeCost = Math.floor(gameState.patienceUpgradeCost * 1.4);
+      updateUI();
+    }
+  };
+  
+  rewardUpgradeBtn.onclick = () => {
+    if (gameState.money >= gameState.rewardUpgradeCost) {
+      gameState.money -= gameState.rewardUpgradeCost;
+      gameState.rewardMultiplier += 0.25;
+      gameState.rewardUpgradeCost = Math.floor(gameState.rewardUpgradeCost * 1.4);
+      updateUI();
+    }
+  };
+  
+  // Start the game
+  updateUI();
+  gameLoop();
+  
+  // Spawn first customer after a delay
+  setTimeout(() => {
+    spawnCustomer();
+    gameState.lastCustomerSpawn = Date.now();
+  }, 3000);
+  
+})();
+</script>
+
+</body>
+</html>
